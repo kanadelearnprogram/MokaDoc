@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能文档系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 登录/注册页 -->
+    <div id="login-page" class="page active">
+        <div class="login-container">
+            <div class="login-left">
+                <div class="logo">
+                    <h1>智能文档系统</h1>
+                    <p>让知识触手可及</p>
+                </div>
+            </div>
+            <div class="login-right">
+                <div class="form-tabs">
+                    <button class="tab active" data-tab="login">登录</button>
+                    <button class="tab" data-tab="register">注册</button>
+                </div>
+                <div class="form-content">
+                    <div id="login-form" class="form active">
+                        <div class="form-group">
+                            <label>用户名/邮箱</label>
+                            <input type="text" placeholder="请输入用户名或邮箱">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" placeholder="请输入密码">
+                        </div>
+                        <div class="form-options">
+                            <label><input type="checkbox"> 记住我</label>
+                            <a href="#">忘记密码</a>
+                        </div>
+                        <button class="btn btn-primary">登录</button>
+                    </div>
+                    <div id="register-form" class="form">
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" placeholder="请输入用户名">
+                        </div>
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" placeholder="请输入邮箱">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" placeholder="请输入密码">
+                        </div>
+                        <div class="form-group">
+                            <label>确认密码</label>
+                            <input type="password" placeholder="请确认密码">
+                        </div>
+                        <button class="btn btn-primary">注册</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="app" class="page">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>智能文档系统</h1>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-item active" data-page="document-management">
+                    📁 文档管理
+                </a>
+                <a href="#" class="nav-item" data-page="intelligent-qa">
+                    💬 智能问答
+                </a>
+                <a href="#" class="nav-item" data-page="knowledge-graph">
+                    🌐 知识图谱
+                </a>
+                <a href="#" class="nav-item" data-page="user-center">
+                    👤 用户中心
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 顶部栏 -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <h2 id="page-title">文档管理</h2>
+            </div>
+            <div class="topbar-right">
+                <button class="icon-btn">🔔</button>
+                <button class="icon-btn">⚙️</button>
+                <div class="user-menu">
+                    <button class="user-btn">👤 用户</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 文档管理页 -->
+            <div id="document-management" class="content-page active">
+                <div class="document-header">
+                    <button class="btn btn-primary">📤 上传文档</button>
+                    <div class="search-box">
+                        <input type="text" placeholder="搜索文档...">
+                        <button class="search-btn">🔍</button>
+                    </div>
+                    <div class="filter-dropdown">
+                        <button class="btn">筛选 ▼</button>
+                    </div>
+                </div>
+                <div class="view-toggle">
+                    <button class="btn active">卡片视图</button>
+                    <button class="btn">表格视图</button>
+                </div>
+                <div class="document-list">
+                    <div class="document-card">
+                        <div class="document-icon pdf-icon">PDF</div>
+                        <h3>机器学习入门.pdf</h3>
+                        <div class="document-meta">
+                            <span>2024-01-01</span>
+                            <span>2.5MB</span>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn-sm">👁️ 预览</button>
+                            <button class="btn-sm">🔗 分享</button>
+                            <button class="btn-sm danger">🗑️ 删除</button>
+                        </div>
+                    </div>
+                    <div class="document-card">
+                        <div class="document-icon txt-icon">TXT</div>
+                        <h3>数据结构笔记.txt</h3>
+                        <div class="document-meta">
+                            <span>2024-01-02</span>
+                            <span>1.2MB</span>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn-sm">👁️ 预览</button>
+                            <button class="btn-sm">🔗 分享</button>
+                            <button class="btn-sm danger">🗑️ 删除</button>
+                        </div>
+                    </div>
+                    <div class="document-card">
+                        <div class="document-icon md-icon">MD</div>
+                        <h3>Python教程.md</h3>
+                        <div class="document-meta">
+                            <span>2024-01-03</span>
+                            <span>3.1MB</span>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn-sm">👁️ 预览</button>
+                            <button class="btn-sm">🔗 分享</button>
+                            <button class="btn-sm danger">🗑️ 删除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 智能问答页 -->
+            <div id="intelligent-qa" class="content-page">
+                <div class="qa-container">
+                    <div class="qa-left">
+                        <div class="session-management">
+                            <button class="btn-sm btn-primary">+ 新建会话</button>
+                            <div class="session-list">
+                                <div class="session-item active">
+                                    <div class="session-title">会话 1</div>
+                                    <div class="session-summary">什么是机器学习？</div>
+                                </div>
+                                <div class="session-item">
+                                    <div class="session-title">会话 2</div>
+                                    <div class="session-summary">监督学习的应用</div>
+                                </div>
+                                <div class="session-item">
+                                    <div class="session-title">会话 3</div>
+                                    <div class="session-summary">无监督学习方法</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="qa-left-header">
+                            <button class="btn-sm">全选</button>
+                            <button class="btn-sm">取消全选</button>
+                        </div>
+                        <div class="document-select-list">
+                            <div class="document-select-item active">
+                                <input type="checkbox" checked>
+                                <span>机器学习入门.pdf</span>
+                            </div>
+                            <div class="document-select-item">
+                                <input type="checkbox">
+                                <span>数据结构笔记.txt</span>
+                            </div>
+                            <div class="document-select-item">
+                                <input type="checkbox">
+                                <span>Python教程.md</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-middle">
+                        <div class="qa-middle-header">
+                            <div class="selected-documents">
+                                <span class="document-tag">机器学习入门.pdf</span>
+                                <button class="tag-remove">×</button>
+                            </div>
+                        </div>
+                        <div class="chat-container">
+                            <div class="chat-message user-message">
+                                <div class="message-content">
+                                    <p>什么是机器学习？</p>
+                                </div>
+                            </div>
+                            <div class="chat-message ai-message">
+                                <div class="message-content">
+                                    <p>机器学习是人工智能的一个分支，它允许计算机在没有明确编程的情况下学习和改进。机器学习算法使用数据来训练模型，然后使用这些模型来预测或做出决策。<sup>[1]</sup></p>
+                                    <p>机器学习可以分为监督学习、无监督学习和强化学习等类型。<sup>[2]</sup></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input">
+                            <textarea placeholder="请输入您的问题..."></textarea>
+                            <button class="btn btn-primary">发送</button>
+                        </div>
+                    </div>
+                    <div class="qa-right">
+                        <div class="qa-right-header">
+                            <h3>引用溯源</h3>
+                        </div>
+                        <div class="reference-content">
+                            <div class="reference-item">
+                                <h4>[1] 机器学习入门.pdf</h4>
+                                <p>机器学习是人工智能的一个分支，它允许计算机在没有明确编程的情况下学习和改进。</p>
+                                <button class="btn-sm">查看原文</button>
+                            </div>
+                            <div class="reference-item">
+                                <h4>[2] 机器学习入门.pdf</h4>
+                                <p>机器学习可以分为监督学习、无监督学习和强化学习等类型。</p>
+                                <button class="btn-sm">查看原文</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 知识图谱页 -->
+            <div id="knowledge-graph" class="content-page">
+                <div class="graph-container">
+                    <div class="graph-left">
+                        <div class="graph-left-header">
+                            <h3>文档选择</h3>
+                            <select class="form-control">
+                                <option>全部文档</option>
+                                <option>机器学习入门.pdf</option>
+                                <option>数据结构笔记.txt</option>
+                                <option>Python教程.md</option>
+                            </select>
+                        </div>
+                        <div class="graph-left-search">
+                            <input type="text" placeholder="搜索知识点...">
+                            <button class="search-btn">🔍</button>
+                        </div>
+                        <div class="graph-legend">
+                            <h3>图例</h3>
+                            <div class="legend-item">
+                                <span class="legend-color blue"></span>
+                                <span>文档</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color green"></span>
+                                <span>章节</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color orange"></span>
+                                <span>知识点</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="graph-middle">
+                        <div class="graph-toolbar">
+                            <button class="btn-sm">🔍 放大</button>
+                            <button class="btn-sm">🔭 缩小</button>
+                            <button class="btn-sm">🔄 重置</button>
+                            <button class="btn-sm">📷 导出</button>
+                        </div>
+                        <div class="graph-visualization">
+                            <!-- 这里将使用ECharts渲染图谱 -->
+                            <div class="graph-placeholder">
+                                <p>知识图谱可视化区域</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="graph-right">
+                        <div class="graph-right-header">
+                            <h3>节点详情</h3>
+                        </div>
+                        <div class="node-details">
+                            <div class="node-type">
+                                <span>类型：</span>
+                                <span>知识点</span>
+                            </div>
+                            <div class="node-info">
+                                <h4>机器学习</h4>
+                                <p>机器学习是人工智能的一个分支，它允许计算机在没有明确编程的情况下学习和改进。</p>
+                            </div>
+                            <button class="btn btn-primary">关联问答</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 文档预览页 -->
+            <div id="document-preview" class="content-page">
+                <div class="preview-header">
+                    <div class="preview-info">
+                        <div class="document-icon pdf-icon">PDF</div>
+                        <div class="document-info">
+                            <h3>机器学习入门.pdf</h3>
+                            <div class="document-meta">
+                                <span>2024-01-01</span>
+                                <span>2.5MB</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="preview-actions">
+                        <button class="btn" onclick="history.back()">返回列表</button>
+                        <button class="btn">下载</button>
+                        <button class="btn btn-primary">生成问答</button>
+                    </div>
+                </div>
+                <div class="preview-content">
+                    <div class="pdf-preview">
+                        <div class="pdf-controls">
+                            <button class="btn-sm">上一页</button>
+                            <span>第 1 页，共 10 页</span>
+                            <button class="btn-sm">下一页</button>
+                            <div class="pdf-zoom">
+                                <span>缩放：</span>
+                                <button class="btn-sm">-</button>
+                                <span>100%</span>
+                                <button class="btn-sm">+</button>
+                            </div>
+                            <button class="btn-sm">搜索</button>
+                        </div>
+                        <div class="pdf-content">
+                            <div class="pdf-page">
+                                <h1>机器学习入门</h1>
+                                <h2>1. 什么是机器学习？</h2>
+                                <p>机器学习是人工智能的一个分支，它允许计算机在没有明确编程的情况下学习和改进。机器学习算法使用数据来训练模型，然后使用这些模型来预测或做出决策。</p>
+                                <p>机器学习可以分为监督学习、无监督学习和强化学习等类型。</p>
+                                <h2>2. 监督学习</h2>
+                                <p>监督学习是一种机器学习方法，其中模型通过标记的训练数据进行学习。标记的训练数据包含输入和相应的输出。</p>
+                                <p>常见的监督学习算法包括线性回归、逻辑回归、决策树、随机森林和支持向量机等。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="preview-recommendations">
+                    <h3>相关推荐</h3>
+                    <div class="recommendation-cards">
+                        <div class="recommendation-card">
+                            <h4>相关文档</h4>
+                            <ul>
+                                <li><a href="#">Python机器学习实战.pdf</a></li>
+                                <li><a href="#">深度学习入门.pdf</a></li>
+                            </ul>
+                        </div>
+                        <div class="recommendation-card">
+                            <h4>相关知识点</h4>
+                            <ul>
+                                <li><a href="#">监督学习</a></li>
+                                <li><a href="#">无监督学习</a></li>
+                                <li><a href="#">强化学习</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户中心页 -->
+            <div id="user-center" class="content-page">
+                <div class="user-container">
+                    <div class="user-sidebar">
+                        <a href="#" class="user-nav-item active">个人信息</a>
+                        <a href="#" class="user-nav-item">修改密码</a>
+                        <a href="#" class="user-nav-item">操作日志</a>
+                        <a href="#" class="user-nav-item">存储空间</a>
+                    </div>
+                    <div class="user-content">
+                        <div class="user-info-section">
+                            <h3>个人信息</h3>
+                            <div class="user-info-form">
+                                <div class="form-group">
+                                    <label>用户名</label>
+                                    <input type="text" value="用户" disabled>
+                                </div>
+                                <div class="form-group">
+                                    <label>邮箱</label>
+                                    <input type="email" value="user@example.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>注册时间</label>
+                                    <input type="text" value="2024-01-01" disabled>
+                                </div>
+                                <button class="btn btn-primary">保存修改</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 简单的页面切换逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 登录/注册表单切换
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-form`).classList.add('active');
+                });
+            });
+
+            // 主应用页面切换
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const pageId = this.dataset.page;
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(pageId).classList.add('active');
+                    document.getElementById('page-title').textContent = this.textContent.trim();
+                    // 显示主应用，隐藏登录页
+                    document.getElementById('login-page').classList.remove('active');
+                    document.getElementById('app').classList.add('active');
+                });
+            });
+
+            // 模拟登录
+            const loginBtn = document.querySelector('#login-form .btn-primary');
+            loginBtn.addEventListener('click', function() {
+                document.getElementById('login-page').classList.remove('active');
+                document.getElementById('app').classList.add('active');
+            });
+
+            // 文档管理页交互
+            // 视图切换
+            const viewToggleBtns = document.querySelectorAll('.view-toggle .btn');
+            viewToggleBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.view-toggle .btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // 文档预览
+            const previewBtns = document.querySelectorAll('.document-actions .btn-sm:nth-child(1)');
+            previewBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 切换到文档预览页
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
+                    const previewPage = document.getElementById('document-preview');
+                    previewPage.classList.add('active');
+                    document.getElementById('page-title').textContent = '文档预览';
+                    console.log('预览按钮被点击，已切换到文档预览页');
+                    console.log('文档预览页状态:', previewPage.classList);
+                });
+            });
+
+            // 文档删除确认
+            const deleteBtns = document.querySelectorAll('.document-actions .btn-sm.danger');
+            deleteBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (confirm('确定要删除这个文档吗？')) {
+                        // 这里可以添加删除逻辑
+                        alert('文档已删除');
+                    }
+                });
+            });
+
+            // 智能问答页交互
+            // 文档选择
+            const documentSelectItems = document.querySelectorAll('.document-select-item');
+            documentSelectItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        this.classList.add('active');
+                    } else {
+                        this.classList.remove('active');
+                    }
+                });
+            });
+
+            // 全选/取消全选
+            const selectAllBtn = document.querySelector('.qa-left-header .btn-sm:nth-child(1)');
+            const deselectAllBtn = document.querySelector('.qa-left-header .btn-sm:nth-child(2)');
+            selectAllBtn.addEventListener('click', function() {
+                document.querySelectorAll('.document-select-item input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = true;
+                    checkbox.parentElement.classList.add('active');
+                });
+            });
+            deselectAllBtn.addEventListener('click', function() {
+                document.querySelectorAll('.document-select-item input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                    checkbox.parentElement.classList.remove('active');
+                });
+            });
+
+            // 会话管理
+            let sessions = [
+                { id: 1, name: '会话 1', messages: [] },
+                { id: 2, name: '会话 2', messages: [] },
+                { id: 3, name: '会话 3', messages: [] }
+            ];
+            let currentSessionId = 1;
+
+            // 新建会话
+            const newSessionBtn = document.querySelector('.session-management .btn-primary');
+            newSessionBtn.addEventListener('click', function() {
+                const newSessionId = sessions.length + 1;
+                const newSession = { id: newSessionId, name: `会话 ${newSessionId}`, messages: [] };
+                sessions.push(newSession);
+                currentSessionId = newSessionId;
+                
+                // 更新会话列表
+                updateSessionList();
+                // 清空聊天容器
+                clearChatContainer();
+            });
+
+            // 会话切换
+            function updateSessionList() {
+                const sessionList = document.querySelector('.session-list');
+                sessionList.innerHTML = '';
+                sessions.forEach(session => {
+                    const sessionItem = document.createElement('div');
+                    sessionItem.className = `session-item ${session.id === currentSessionId ? 'active' : ''}`;
+                    sessionItem.innerHTML = `
+                        <div class="session-title">${session.name}</div>
+                        <div class="session-summary">${session.messages.length > 0 ? session.messages[0].content : '无消息'}</div>
+                    `;
+                    sessionItem.addEventListener('click', function() {
+                        currentSessionId = session.id;
+                        updateSessionList();
+                        loadSessionMessages();
+                    });
+                    sessionList.appendChild(sessionItem);
+                });
+            }
+
+            // 清空聊天容器
+            function clearChatContainer() {
+                const chatContainer = document.querySelector('.chat-container');
+                chatContainer.innerHTML = '';
+            }
+
+            // 加载会话消息
+            function loadSessionMessages() {
+                const currentSession = sessions.find(s => s.id === currentSessionId);
+                if (currentSession) {
+                    clearChatContainer();
+                    const chatContainer = document.querySelector('.chat-container');
+                    currentSession.messages.forEach(message => {
+                        const messageElement = document.createElement('div');
+                        messageElement.className = `chat-message ${message.type}-message`;
+                        messageElement.innerHTML = `
+                            <div class="message-content">
+                                <p>${message.content}</p>
+                            </div>
+                        `;
+                        chatContainer.appendChild(messageElement);
+                    });
+                    // 滚动到底部
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            }
+
+            // 发送消息
+            const sendBtn = document.querySelector('.chat-input .btn-primary');
+            sendBtn.addEventListener('click', function() {
+                const textarea = document.querySelector('.chat-input textarea');
+                const message = textarea.value.trim();
+                if (message) {
+                    // 添加用户消息
+                    const chatContainer = document.querySelector('.chat-container');
+                    const userMessage = document.createElement('div');
+                    userMessage.className = 'chat-message user-message';
+                    userMessage.innerHTML = `
+                        <div class="message-content">
+                            <p>${message}</p>
+                        </div>
+                    `;
+                    chatContainer.appendChild(userMessage);
+
+                    // 保存到当前会话
+                    const currentSession = sessions.find(s => s.id === currentSessionId);
+                    if (currentSession) {
+                        currentSession.messages.push({ type: 'user', content: message });
+                    }
+
+                    // 清空输入框
+                    textarea.value = '';
+
+                    // 模拟AI回复
+                    setTimeout(() => {
+                        const aiReply = '这是AI的回复，基于你提供的文档内容。';
+                        const aiMessage = document.createElement('div');
+                        aiMessage.className = 'chat-message ai-message';
+                        aiMessage.innerHTML = `
+                            <div class="message-content">
+                                <p>${aiReply}<sup>[1]</sup></p>
+                            </div>
+                        `;
+                        chatContainer.appendChild(aiMessage);
+
+                        // 保存到当前会话
+                        if (currentSession) {
+                            currentSession.messages.push({ type: 'ai', content: aiReply });
+                        }
+
+                        // 滚动到底部
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }, 1000);
+
+                    // 滚动到底部
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            });
+
+            // 知识图谱页交互
+            // 模拟节点点击
+            const graphPlaceholder = document.querySelector('.graph-placeholder');
+            graphPlaceholder.addEventListener('click', function() {
+                alert('节点点击功能：这里将显示节点的详细信息');
+            });
+
+            // 用户中心页交互
+            // 侧边栏切换
+            const userNavItems = document.querySelectorAll('.user-nav-item');
+            userNavItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.user-nav-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // 保存修改
+            const saveBtn = document.querySelector('.user-info-form .btn-primary');
+            saveBtn.addEventListener('click', function() {
+                alert('保存成功！');
+            });
+        });
+    </script>
+</body>
+</html>
