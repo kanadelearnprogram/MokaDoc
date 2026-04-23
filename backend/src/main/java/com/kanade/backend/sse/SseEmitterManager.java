@@ -31,24 +31,24 @@ public class SseEmitterManager {
 
         // 设置超时回调
         emitter.onTimeout(() -> {
-            log.warn("SSE 连接超时, taskId={}", taskId);
+            log.warn("⏰ [SSE超时] taskId={}", taskId);
             emitterMap.remove(taskId);
         });
 
         // 设置完成回调
         emitter.onCompletion(() -> {
-            log.info("SSE 连接完成, taskId={}", taskId);
+            log.debug("🔚 [SSE完成] taskId={}", taskId);
             emitterMap.remove(taskId);
         });
 
         // 设置错误回调
         emitter.onError((e) -> {
-            log.error("SSE 连接错误, taskId={}", taskId, e);
+            log.error("💥 [SSE错误] taskId={}, error={}", taskId, e.getMessage());
             emitterMap.remove(taskId);
         });
 
         emitterMap.put(taskId, emitter);
-        log.info("SSE 连接已创建, taskId={}", taskId);
+        log.debug("🔌 [SSE创建] taskId={}", taskId);
 
         return emitter;
     }
@@ -68,11 +68,13 @@ public class SseEmitterManager {
 
         try {
             emitter.send(SseEmitter.event()
+                    .name("message")
                     .data(message)
                     .reconnectTime(SSE_RECONNECT_TIME_MS));
-            log.debug("SSE 消息发送成功, taskId={}, message={}", taskId, message);
+            log.trace("📤 [SSE发送] taskId={}, messageLength={}", taskId, message.length());
         } catch (IOException e) {
-            log.error("SSE 消息发送失败, taskId={}", taskId, e);
+            // 客户端断开连接，静默处理
+            log.debug("❌ [SSE发送失败] taskId={}, reason=客户端已断开", taskId);
             emitterMap.remove(taskId);
         }
     }
@@ -91,9 +93,9 @@ public class SseEmitterManager {
 
         try {
             emitter.complete();
-            log.info("SSE 连接已完成, taskId={}", taskId);
+            log.debug("✅ [SSE关闭] taskId={}", taskId);
         } catch (Exception e) {
-            log.error("SSE 连接完成失败, taskId={}", taskId, e);
+            log.error("❌ [SSE关闭失败] taskId={}, error={}", taskId, e.getMessage());
         } finally {
             emitterMap.remove(taskId);
         }
