@@ -10,6 +10,12 @@ interface SSEOptions {
   signal?: AbortSignal
 }
 
+interface SSEFetchOptions extends SSEOptions {
+  method?: 'GET' | 'POST'
+  body?: any
+  headers?: Record<string, string>
+}
+
 /**
  * 使用 EventSource 进行 SSE 流式请求
  * @param url - 请求URL
@@ -78,28 +84,54 @@ export function useSSE(
  * 使用 fetch API 进行 SSE 流式请求（备选方案）
  * 适用于需要自定义 headers 或 POST 请求的场景
  * @param url - 请求URL
- * @param params - 查询参数
- * @param options - 回调选项
+ * @param paramsOrBody - GET请求时为查询参数对象，POST请求时为请求体对象
+ * @param options - 回调选项和请求配置
  */
 export async function useSSEFetch(
   url: string,
-  params: Record<string, string>,
-  options: SSEOptions
+  paramsOrBody: Record<string, any>,
+  options: SSEFetchOptions = {}
 ): Promise<void> {
-  const { onMessage, onError, onComplete, signal } = options
+  const { 
+    onMessage, 
+    onError, 
+    onComplete, 
+    signal,
+    method = 'GET',
+    body,
+    headers: customHeaders = {}
+  } = options
 
   try {
-    const queryString = new URLSearchParams(params).toString()
-    const fullUrl = `${url}?${queryString}`
-
-    const response = await fetch(fullUrl, {
-      method: 'GET',
+    let fullUrl = url
+    let requestBody: BodyInit | null | undefined = undefined
+    
+    // 构建请求配置
+    const requestConfig: RequestInit = {
+      method,
       headers: {
         'Accept': 'text/event-stream',
         'Cache-Control': 'no-cache',
+        ...customHeaders,
       },
       signal,
-    })
+    }
+
+    if (method === 'GET') {
+      // GET 请求：将参数作为 query string
+      const queryString = new URLSearchParams(paramsOrBody).toString()
+      fullUrl = `${url}?${queryString}`
+    } else if (method === 'POST') {
+      // POST 请求：将参数作为 JSON body
+      requestConfig.headers = {
+        ...requestConfig.headers,
+        'Content-Type': 'application/json',
+      }
+      requestBody = JSON.stringify(body || paramsOrBody)
+      requestConfig.body = requestBody
+    }
+
+    const response = await fetch(fullUrl, requestConfig)
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)

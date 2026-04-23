@@ -1,9 +1,13 @@
 package com.kanade.backend.service;
 
+import com.kanade.backend.entity.QaMessage;
+import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.service.IService;
 import com.kanade.backend.entity.QaSession;
+import jakarta.servlet.http.HttpServletRequest;
 import reactor.core.publisher.Flux;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -49,4 +53,10 @@ public interface QaSessionService extends IService<QaSession> {
      * @return JSON字符串
      */
     String buildConnectedData(Long sessionId);
+
+
+    Page<QaSession> listAppChatHistoryByPage(Long id, int pageSize, LocalDateTime lastCreateTime, HttpServletRequest request);
+
+
+
 }

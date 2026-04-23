@@ -5,7 +5,10 @@
       <div class="qa-left">
         <div class="session-management">
           <button class="btn-sm btn-primary" @click="createNewSession">+ 新建会话</button>
-          <div class="session-list">
+          <div class="session-list" ref="sessionListRef" @scroll="handleSessionListScroll">
+            <div v-if="sessions.length === 0 && !loadingSessions" class="empty-session">
+              暂无会话，请新建或等待加载
+            </div>
             <div 
               v-for="session in sessions" 
               :key="session.id"
@@ -17,6 +20,15 @@
               <div class="session-summary">
                 {{ session.messages.length > 0 ? session.messages[0].content : '无消息' }}
               </div>
+            </div>
+            
+            <!-- 加载更多提示 -->
+            <div v-if="loadingSessions" class="loading-more">
+              <span class="loading-spinner"></span>
+              加载中...
+            </div>
+            <div v-else-if="!hasMoreSessions && sessions.length > 0" class="no-more">
+              已加载全部会话
             </div>
           </div>
         </div>
@@ -122,7 +134,7 @@
 import { ref, computed, nextTick, onUnmounted, onMounted } from 'vue'
 import { useSSEFetch, createAbortController } from '@/utils/sse'
 import { marked } from 'marked'
-import { listSessions } from '@/api/liaotianguanli'
+import { listSessions, listChat } from '@/api/liaotianguanli'
 
 // 配置 marked 选项
 marked.setOptions({
@@ -146,6 +158,7 @@ interface Session {
   name: string
   messages: Message[]
   backendSessionId?: number  // 后端会话 ID（从 SSE 响应中获取）
+  loaded?: boolean  // 是否已加载消息历史
 }
 
 interface Document {
@@ -161,6 +174,13 @@ interface Reference {
 // 会话数据
 const sessions = ref<Session[]>([])
 const currentSessionId = ref<number | null>(null)
+
+// 分页相关状态
+const currentPage = ref(1)           // 当前页码
+const pageSize = ref(10)             // 每页大小
+const hasMoreSessions = ref(true)    // 是否还有更多数据
+const loadingSessions = ref(false)   // 是否正在加载
+const sessionListRef = ref<HTMLElement | null>(null)  // 会话列表容器引用
 
 // 文档数据
 const documents = ref<Document[]>([
@@ -249,53 +269,168 @@ const getDocumentName = (docId: number) => {
   return doc ? doc.name : ''
 }
 
-// 加载会话列表
-const loadSessions = async () => {
+// 加载会话列表（支持分页追加）
+const loadSessions = async (isLoadMore = false) => {
+  // 防止重复加载
+  if (loadingSessions.value) return
+  
+  // 如果没有更多数据，不再加载
+  if (isLoadMore && !hasMoreSessions.value) return
+  
   try {
-    console.log('开始加载会话列表...')
-    const res = await listSessions()
+    loadingSessions.value = true
+    const pageToLoad = isLoadMore ? currentPage.value + 1 : 1
+    
+    console.log(`开始加载会话列表... 页码: ${pageToLoad}, 每页: ${pageSize.value}`)
+    
+    const res = await listSessions({
+      pageSize: pageSize.value,
+      // 如果后端支持游标分页，可以传入 lastCreateTime
+      // lastCreateTime: isLoadMore && sessions.value.length > 0 
+      //   ? sessions.value[sessions.value.length - 1].createTime 
+      //   : undefined
+    })
+    
+    console.log('后端响应:', res.data)
     
     if (res.data.code === 0 && res.data.data) {
+      // 注意：后端返回的是分页结构，数据在 data.records 中
+      const records = res.data.data.records || []
+      const totalRow = res.data.data.totalRow || 0
+      
+      console.log(`本次加载记录数: ${records.length}, 总记录数: ${totalRow}`)
+      
       // 将后端返回的 QaSession 转换为前端 Session 格式
-      sessions.value = res.data.data.map((qaSession) => ({
+      const newSessions = records.map((qaSession) => ({
         id: qaSession.id!,
         name: qaSession.sessionName || `会话 ${qaSession.id}`,
         messages: [], // 初始化为空，后续按需加载消息历史
-        backendSessionId: qaSession.id
+        backendSessionId: qaSession.id,
+        loaded: false  // 标记是否已加载消息历史
       }))
       
-      // 如果有会话，默认选中第一个
-      if (sessions.value.length > 0) {
-        currentSessionId.value = sessions.value[0].id
+      if (isLoadMore) {
+        // 追加模式：将新数据添加到现有列表后面
+        sessions.value = [...sessions.value, ...newSessions]
+      } else {
+        // 首次加载模式：替换整个列表
+        sessions.value = newSessions
+        
+        // 如果有会话，默认选中第一个并加载其消息
+        if (sessions.value.length > 0) {
+          currentSessionId.value = sessions.value[0].id
+          // 异步加载第一个会话的消息
+          loadSessionMessages(sessions.value[0].id)
+        }
       }
       
-      console.log('✅ 会话列表加载成功:', sessions.value)
+      // 更新分页状态
+      currentPage.value = pageToLoad
+      hasMoreSessions.value = sessions.value.length < totalRow
+      
+      console.log(`✅ 会话列表加载成功, 当前总数: ${sessions.value.length}, 是否还有更多: ${hasMoreSessions.value}`)
     } else {
       console.error('❌ 会话列表加载失败:', res.data.message)
     }
   } catch (error) {
     console.error('❌ 加载会话列表异常:', error)
+  } finally {
+    loadingSessions.value = false
+  }
+}
+
+// 处理会话列表滚动事件
+const handleSessionListScroll = (event: Event) => {
+  const target = event.target as HTMLElement
+  if (!target) return
+  
+  // 计算滚动位置
+  const scrollTop = target.scrollTop              // 已滚动距离
+  const scrollHeight = target.scrollHeight        // 总高度
+  const clientHeight = target.clientHeight        // 可见高度
+  
+  // 当滚动到距离底部 50px 时触发加载
+  const threshold = 50
+  if (scrollHeight - scrollTop - clientHeight < threshold) {
+    console.log('触发加载更多')
+    loadSessions(true)  // 加载更多
   }
 }
 
 // 创建新会话
-const createNewSession = () => {
-  // 注意：新建会话应该调用后端接口创建，这里只是前端临时实现
-  // TODO: 调用后端创建会话接口
-  const newId = Date.now() // 使用时间戳作为临时 ID
-  const newSession: Session = {
-    id: newId,
-    name: `新会话`,
-    messages: [],
-    backendSessionId: undefined // 第一次发送消息时由后端分配
+const createNewSession = async () => {
+  try {
+    console.log('创建新会话...')
+    
+    // TODO: 调用后端创建会话接口
+    // 目前后端可能没有单独的创建接口，通过第一次发送消息自动创建
+    // 这里先使用前端临时创建，第一次发送消息时会由后端分配 sessionId
+    
+    const newId = Date.now() // 使用时间戳作为临时 ID
+    const newSession: Session = {
+      id: newId,
+      name: `新会话`,
+      messages: [],
+      backendSessionId: undefined, // 第一次发送消息时由后端分配
+      loaded: true  // 新会话无需加载历史
+    }
+    
+    sessions.value.unshift(newSession)  // 添加到列表开头
+    currentSessionId.value = newId
+    
+    console.log('✅ 新会话创建成功:', newSession)
+  } catch (error) {
+    console.error('❌ 创建会话失败:', error)
   }
-  sessions.value.push(newSession)
-  currentSessionId.value = newId
+}
+
+// 加载指定会话的消息历史
+const loadSessionMessages = async (sessionId: number) => {
+  const session = sessions.value.find(s => s.id === sessionId)
+  if (!session || session.loaded) {
+    console.log('会话不存在或已加载，跳过')
+    return
+  }
+  
+  try {
+    console.log(`开始加载会话 ${sessionId} 的消息历史...`)
+    
+    const res = await listChat({
+      sessionId: session.backendSessionId!,
+      pageSize: 100  // 一次性加载较多消息
+    })
+    
+    if (res.data.code === 0 && res.data.data) {
+      const records = res.data.data.records || []
+      
+      // 将后端返回的 QaMessage 转换为前端 Message 格式
+      // 注意：后端可能按时间降序返回(新的在前)，需要反转为升序(旧的在上，新的在下)
+      const messages: Message[] = records
+        .map((qaMessage) => ({
+          type: qaMessage.messageType === 1 ? 'user' : 'ai',
+          content: qaMessage.content || ''
+        }))
+        .reverse()  // 反转数组，使旧消息在上，新消息在下
+      
+      session.messages = messages
+      session.loaded = true  // 标记为已加载
+      
+      console.log(`✅ 会话 ${sessionId} 消息加载成功, 共 ${messages.length} 条`)
+      console.log('消息顺序:', messages.map(m => m.type + ':' + m.content.substring(0, 20)))
+    } else {
+      console.error('❌ 加载消息历史失败:', res.data.message)
+    }
+  } catch (error) {
+    console.error('❌ 加载消息历史异常:', error)
+  }
 }
 
 // 切换会话
-const switchSession = (sessionId: number) => {
+const switchSession = async (sessionId: number) => {
   currentSessionId.value = sessionId
+  
+  // 异步加载该会话的消息历史
+  await loadSessionMessages(sessionId)
 }
 
 // 切换文档选择
@@ -387,15 +522,19 @@ const sendMessage = async () => {
       {
         method: 'POST',  // 使用 POST 方法
         onMessage: (data) => {
-          // 尝试解析元数据：如果数据是 JSON 格式且包含 sessionId，则保存
+          console.log('收到SSE数据:', data)
+          
+          // 尝试解析 JSON 格式的数据
           try {
             const parsed = JSON.parse(data)
-            // 如果是元数据（包含 message 和 sessionId 字段）
-            if (parsed.message && parsed.sessionId !== undefined) {
+            
+            // 处理不同类型的消息
+            if (parsed.type === 'metadata' || (parsed.message && parsed.sessionId !== undefined)) {
+              // 元数据类型：包含 sessionId 等信息
               console.log('接收到元数据:', parsed)
               
               // 保存后端返回的 sessionId 到当前会话
-              if (session && !session.backendSessionId) {
+              if (session && !session.backendSessionId && parsed.sessionId) {
                 session.backendSessionId = parsed.sessionId
                 console.log('✅ 保存后端 sessionId:', parsed.sessionId, '到前端会话:', session.id)
               } else if (session && session.backendSessionId) {
@@ -405,26 +544,48 @@ const sendMessage = async () => {
               // 不将元数据显示在对话中
               return
             }
+            
+            if (parsed.type === 'streaming' && parsed.content !== undefined) {
+              // 流式内容类型：提取 content 字段并拼接
+              const contentChunk = parsed.content
+              
+              if (contentChunk) {
+                aiMessageContent += contentChunk
+                
+                // 更新最后一条 AI 消息
+                if (session) {
+                  const lastMessage = session.messages[session.messages.length - 1]
+                  if (lastMessage && lastMessage.type === 'ai') {
+                    lastMessage.content = aiMessageContent
+                  }
+                }
+                
+                // 实时滚动到底部
+                scrollToBottom()
+              }
+              return
+            }
+            
+            // 其他类型的 JSON 数据，记录日志但不处理
+            console.log('未处理的JSON类型:', parsed.type)
+            
           } catch (e) {
-            // 不是 JSON 格式，说明是对话内容，继续处理
-          }
-          
-          // 累积接收到的对话内容（直接拼接，保留原始格式）
-          // 注意：不要对数据进行任何修改，让 CSS white-space: pre-wrap 来处理空格和换行
-          if (data) {
-            aiMessageContent += data
-          }
-          
-          // 更新最后一条 AI 消息
-          if (session) {
-            const lastMessage = session.messages[session.messages.length - 1]
-            if (lastMessage && lastMessage.type === 'ai') {
-              lastMessage.content = aiMessageContent
+            // 不是 JSON 格式，可能是纯文本（兼容旧格式）
+            console.warn('非JSON格式数据，直接拼接:', data)
+            if (data) {
+              aiMessageContent += data
+              
+              // 更新最后一条 AI 消息
+              if (session) {
+                const lastMessage = session.messages[session.messages.length - 1]
+                if (lastMessage && lastMessage.type === 'ai') {
+                  lastMessage.content = aiMessageContent
+                }
+              }
+              
+              scrollToBottom()
             }
           }
-          
-          // 实时滚动到底部
-          scrollToBottom()
         },
         onError: (error) => {
           console.error('SSE error:', error)
@@ -732,5 +893,41 @@ const fixMarkdownHeaders = (text: string): string => {
   color: #909399;
   font-size: 14px;
   padding: 20px 10px;
+}
+
+/* 加载更多提示 */
+.loading-more {
+  text-align: center;
+  padding: 12px 10px;
+  color: #909399;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 加载动画 */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dcdfe6;
+  border-top-color: #409eff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 无更多数据提示 */
+.no-more {
+  text-align: center;
+  padding: 12px 10px;
+  color: #c0c4cc;
+  font-size: 13px;
 }
 </style>

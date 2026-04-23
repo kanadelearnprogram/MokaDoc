@@ -2,22 +2,28 @@ package com.kanade.backend.controller;
 
 import com.kanade.backend.common.BaseResponse;
 import com.kanade.backend.common.ResultUtils;
+import com.kanade.backend.dto.ChatSessionQueryDTO;
 import com.kanade.backend.dto.UserQuestion;
+import com.kanade.backend.entity.QaMessage;
 import com.kanade.backend.entity.QaSession;
 import com.kanade.backend.entity.User;
+import com.kanade.backend.service.QaMessageService;
 import com.kanade.backend.service.QaSessionService;
 import com.kanade.backend.service.UserService;
 import com.kanade.backend.sse.SseEmitterManager;
+import com.mybatisflex.core.paginate.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +42,8 @@ public class ChatController {
 
     @Resource
     private SseEmitterManager sseEmitterManager;
+    @Autowired
+    private QaMessageService qaMessageService;
 
     /**
      * 智能问答接口(自动创建会话)
@@ -112,11 +120,15 @@ public class ChatController {
      */
     @GetMapping("/session/list")
     @Operation(summary = "获取会话列表")
-    public BaseResponse<List<QaSession>> listSessions(HttpServletRequest request) {
+    public BaseResponse<Page<QaSession>> listSessions(@RequestParam(defaultValue = "5") int pageSize,
+                                                                @RequestParam(required = false) LocalDateTime lastCreateTime,
+                                                                HttpServletRequest request) {
+
         User currentUser = userService.getLoginUser(request);
-        List<QaSession> sessions = qaSessionService.listUserSessions(currentUser.getId());
+        Page<QaSession> sessions = qaSessionService.listAppChatHistoryByPage(currentUser.getId(), pageSize, lastCreateTime, request);
         return ResultUtils.success(sessions);
     }
+
 
     /**
      * 删除会话
@@ -128,5 +140,15 @@ public class ChatController {
         User currentUser = userService.getLoginUser(request);
         qaSessionService.deleteSession(sessionId, currentUser.getId());
         return ResultUtils.success(true);
+    }
+
+    //获取当前会话的聊天记录
+    @GetMapping("chat/list/{sessionId}")
+    public BaseResponse<Page<QaMessage>> listChat(@PathVariable Long sessionId,@RequestParam(defaultValue = "5") int pageSize,
+                                                  @RequestParam(required = false) LocalDateTime lastCreateTime,
+                                                  HttpServletRequest request){
+        User currentUser = userService.getLoginUser(request);
+        Page<QaMessage> sessions = qaMessageService.listSessionChatByPage(sessionId, pageSize, lastCreateTime, currentUser.getId());
+        return ResultUtils.success(sessions);
     }
 }

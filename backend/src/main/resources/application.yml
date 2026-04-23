@@ -22,8 +22,9 @@ spring:
     redis:
       host: localhost
       port: 6379
-      database: 0
+      database: 4
       password:
+      ttl: 3600
 
 mybatis-flex:
   configuration:
@@ -51,4 +52,8 @@ springdoc:
       paths-to-match: '/**'
       packages-to-scan: com.kanade.backend.controller
 
-
+langchain4j:
+  community:
+    redis:
+      host: localhost
+      port: 6379

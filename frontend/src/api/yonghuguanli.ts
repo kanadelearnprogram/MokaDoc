@@ -2,21 +2,6 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** 此处后端没有提供注释 GET /chat/chat-stream */
-export async function chat(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.chatParams,
-  options?: { [key: string]: any }
-) {
-  return request<string[]>('/chat/chat-stream', {
-    method: 'GET',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  })
-}
-
 /** 获取用户信息 根据用户ID获取用户详细信息 GET /user/${param0} */
 export async function getUserById(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)

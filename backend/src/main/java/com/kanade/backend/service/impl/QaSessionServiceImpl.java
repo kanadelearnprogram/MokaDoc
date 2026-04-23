@@ -1,5 +1,9 @@
 package com.kanade.backend.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import com.kanade.backend.dto.ChatSessionQueryDTO;
+import com.kanade.backend.dto.chat.ChatQueryRequest;
+import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.kanade.backend.ai.AiChatService;
@@ -12,12 +16,11 @@ import com.kanade.backend.mapper.QaSessionMapper;
 import com.kanade.backend.service.QaMessageService;
 import com.kanade.backend.service.QaSessionService;
 import com.kanade.backend.utils.GsonUtils;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +31,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 问答会话表 服务层实现。
@@ -176,6 +178,15 @@ public class QaSessionServiceImpl extends ServiceImpl<QaSessionMapper, QaSession
         return GsonUtils.toJson(data);
     }
 
+    @Override
+    public Page<QaSession> listAppChatHistoryByPage(Long id, int pageSize, LocalDateTime lastCreateTime, HttpServletRequest request) {
+        ChatSessionQueryDTO chatSessionQueryDTO = new ChatSessionQueryDTO();
+        chatSessionQueryDTO.setUserId(id);
+        chatSessionQueryDTO.setLastCreateTime(lastCreateTime);
+        QueryWrapper queryWrapper = this.getSessionQueryWrapper(chatSessionQueryDTO);
+        return this.page(Page.of(1,pageSize),queryWrapper);
+    }
+
     /**
      * 构建流式数据JSON
      *
@@ -237,4 +248,32 @@ public class QaSessionServiceImpl extends ServiceImpl<QaSessionMapper, QaSession
 
         log.info("删除会话成功, sessionId={}, userId={}", sessionId, userId);
     }
+
+
+    private QueryWrapper getSessionQueryWrapper(ChatSessionQueryDTO chatSessionQueryDTO) {
+        QueryWrapper queryWrapper = QueryWrapper.create();
+        if (chatSessionQueryDTO == null) {
+            return queryWrapper;
+        }
+        Long userId = chatSessionQueryDTO.getUserId();
+        LocalDateTime lastCreateTime = chatSessionQueryDTO.getLastCreateTime();
+        String sortField = chatSessionQueryDTO.getSortField();
+        String sortOrder = chatSessionQueryDTO.getSortOrder();
+        // 拼接查询条件
+        queryWrapper
+                .eq("user_id", userId);
+        // 游标查询逻辑 - 只使用 createTime 作为游标
+        if (lastCreateTime != null) {
+            queryWrapper.lt("create_time", lastCreateTime);
+        }
+        // 排序
+        if (StrUtil.isNotBlank(sortField)) {
+            queryWrapper.orderBy(sortField, "ascend".equals(sortOrder));
+        } else {
+            // 默认按创建时间降序排列
+            queryWrapper.orderBy("create_time", false);
+        }
+        return queryWrapper;
+    }
+
 }
