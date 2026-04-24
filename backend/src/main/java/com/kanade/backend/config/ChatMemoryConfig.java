@@ -1,6 +1,7 @@
 package com.kanade.backend.config;
 
 import com.kanade.backend.ai.memory.PersistenceMemory;
+import com.kanade.backend.ai.memory.RedisMemoryStore;
 import com.kanade.backend.service.QaMessageService;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
@@ -11,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * LangChain4j ChatMemory配置
- * 提供基于数据库持久化的记忆提供者
+ * 提供基于Redis + 数据库双层缓存的记忆提供者
  */
 @Slf4j
 @Configuration
@@ -19,6 +20,9 @@ public class ChatMemoryConfig {
 
     @Resource
     private QaMessageService qaMessageService;
+
+    @Resource
+    private RedisMemoryStore redisMemoryStore;
 
     /**
      * 默认滑动窗口大小：保留最近20条消息
@@ -40,8 +44,8 @@ public class ChatMemoryConfig {
                 
                 log.debug("🔑 [获取记忆] sessionId={}", sessionId);
                 
-                // 为每个sessionId创建独立的PersistenceMemory实例
-                return new PersistenceMemory(sessionId, qaMessageService, DEFAULT_MAX_MESSAGES);
+                // 为每个sessionId创建独立的PersistenceMemory实例（包含Redis缓存）
+                return new PersistenceMemory(sessionId, qaMessageService, redisMemoryStore, DEFAULT_MAX_MESSAGES);
             }
         };
     }
