@@ -1,5 +1,6 @@
 package com.kanade.backend.ai;
 
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
@@ -19,6 +20,9 @@ public class AiServiceFactory {
     
     @Resource
     private OpenAiStreamingChatModel openAiStreamingChatModel;
+    
+    @Resource
+    private ChatMemoryProvider chatMemoryProvider;
     
     /**
      * 缓存已创建的AI服务实例，避免重复创建
@@ -63,20 +67,27 @@ public class AiServiceFactory {
 
     
     /**
-     * 根据模型类型创建对应的AI服务
+     * 根据模型类型创建对应的AI服务（使用Builder模式配置ChatMemoryProvider）
      *
      * @param modelType AI模型类型
      * @return AI服务实例
      */
     private Object createService(AiModelType modelType) {
-        log.info("创建AI服务: {}", modelType.getDescription());
+        log.info("🏭 [创建AI服务] type={}, description={}", modelType.getCode(), modelType.getDescription());
         
         return switch (modelType) {
-            case CHAT_ASSISTANT -> 
-                AiServices.create(AiChatService.class, openAiStreamingChatModel);
+            case CHAT_ASSISTANT -> {
+                log.debug("🧠 [配置记忆] 为CHAT_ASSISTANT启用ChatMemoryProvider");
+                yield AiServices.builder(AiChatService.class)
+                    .streamingChatModel(openAiStreamingChatModel)
+                    .chatMemoryProvider(chatMemoryProvider)  // 关键：配置记忆提供者
+                    .build();
+            }
             
-            case DOCUMENT_ANALYST -> 
-                AiServices.create(DocumentAnalystService.class, openAiStreamingChatModel);
+            case DOCUMENT_ANALYST -> {
+                log.debug("📄 [无记忆] DOCUMENT_ANALYST不需要记忆功能");
+                yield AiServices.create(DocumentAnalystService.class, openAiStreamingChatModel);
+            }
             
 //            case CODE_ASSISTANT ->
 //                AiServices.create(CodeAssistantService.class, openAiStreamingChatModel);

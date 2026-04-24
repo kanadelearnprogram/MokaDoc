@@ -21,10 +21,10 @@ public class AiServiceExample {
     /**
      * 示例1: 使用通用聊天助手
      */
-    public Flux<String> chatExample(String userMessage) {
+    public Flux<String> chatExample(Long sessionId, String userMessage) {
         // 方式1: 通过枚举类型获取
         AiChatService chatService = aiServiceFactory.getService(AiModelType.CHAT_ASSISTANT);
-        return chatService.chat(userMessage);
+        return chatService.chat(sessionId, userMessage);
     }
     
     /**
@@ -40,7 +40,7 @@ public class AiServiceExample {
     /**
      * 示例5: 动态根据类型选择AI服务
      */
-    public Flux<String> dynamicServiceSelection(String modelTypeCode, String userInput) {
+    public Flux<String> dynamicServiceSelection(Long sessionId,String modelTypeCode, String userInput) {
         // 根据code获取枚举
         AiModelType modelType = AiModelType.getByCode(modelTypeCode);
         
@@ -53,7 +53,7 @@ public class AiServiceExample {
         // 根据类型调用不同的服务
         return switch (modelType) {
             case CHAT_ASSISTANT -> 
-                aiServiceFactory.getChatAssistant().chat(userInput);
+                aiServiceFactory.getChatAssistant().chat(sessionId,userInput);
             
             case DOCUMENT_ANALYST -> 
                 aiServiceFactory.getDocumentAnalyst().analyze(userInput);

@@ -7,6 +7,7 @@ import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.kanade.backend.ai.AiChatService;
+import com.kanade.backend.ai.AiServiceFactory;
 import com.kanade.backend.constant.SseMessageTypeEnum;
 import com.kanade.backend.entity.QaMessage;
 import com.kanade.backend.entity.QaSession;
@@ -43,6 +44,9 @@ public class QaSessionServiceImpl extends ServiceImpl<QaSessionMapper, QaSession
 
     @Resource
     private QaMessageService qaMessageService;
+
+    @Resource
+    private AiServiceFactory aiServiceFactory;
 
     @Resource
     private OpenAiStreamingChatModel openAiStreamingChatModel;
@@ -101,13 +105,14 @@ public class QaSessionServiceImpl extends ServiceImpl<QaSessionMapper, QaSession
         qaMessageService.save(userMsg);
         log.debug("💾 [保存用户消息] messageId={}, sessionId={}", userMsg.getId(), sessionId);
 
-        // 3. 构建 AI 服务
-        AiChatService aiService = AiServices.create(AiChatService.class, openAiStreamingChatModel);
+        // 3. 从工厂获取AI服务（已配置ChatMemoryProvider，支持记忆功能）
+        // 工厂会缓存实例，避免重复创建
+        AiChatService aiService = aiServiceFactory.getChatAssistant();
         
-        // 4. 流式调用 AI 并保存响应
+        // 4. 流式调用 AI 并保存响应（传入sessionId作为memoryId，自动加载历史记忆）
         StringBuilder fullResponse = new StringBuilder();
         
-        return aiService.chat(userMessage)
+        return aiService.chat(sessionId,userMessage)
             .map(chunk -> {
                 // 将每个chunk包装成JSON格式
                 fullResponse.append(chunk);

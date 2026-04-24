@@ -8,15 +8,19 @@ import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.kanade.backend.entity.QaMessage;
 import com.kanade.backend.mapper.QaMessageMapper;
 import com.kanade.backend.service.QaMessageService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 会话消息表 服务层实现。
  *
  * @author kanade
  */
+@Slf4j
 @Service
 public class QaMessageServiceImpl extends ServiceImpl<QaMessageMapper, QaMessage>  implements QaMessageService {
 
@@ -56,5 +60,35 @@ public class QaMessageServiceImpl extends ServiceImpl<QaMessageMapper, QaMessage
             queryWrapper.orderBy("create_time", false);
         }
         return queryWrapper;
+    }
+
+    @Override
+    public List<QaMessage> listRecentMessages(Long sessionId, int limit) {
+        // 查询该会话的最近N条消息，按时间升序（保证对话顺序）
+        QueryWrapper queryWrapper = QueryWrapper.create()
+            .eq("session_id", sessionId)
+            .eq("delete_flag", 0)
+            .orderBy("create_time asc")
+            .limit(limit);
+        
+        List<QaMessage> messages = this.list(queryWrapper);
+        log.debug("📖 [查询历史消息] sessionId={}, limit={}, actualCount={}", 
+                  sessionId, limit, messages.size());
+        
+        return messages;
+    }
+
+    @Override
+    @Transactional
+    public void deleteBySessionId(Long sessionId) {
+        // 逻辑删除该会话的所有消息
+        QueryWrapper queryWrapper = QueryWrapper.create()
+            .eq("session_id", sessionId);
+        
+        QaMessage updateEntity = new QaMessage();
+        updateEntity.setDeleteFlag(1);
+        
+        boolean success = this.update(updateEntity, queryWrapper);
+        log.info("🗑️ [删除会话消息] sessionId={}, success={}", sessionId, success);
     }
 }

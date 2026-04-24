@@ -1,6 +1,8 @@
 package com.kanade.backend.ai;
 
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.spring.AiService;
 import reactor.core.publisher.Flux;
 
@@ -16,6 +18,6 @@ public interface AiChatService {
         - For mixed Chinese and English: Add a space before and after English words (e.g., "使用 Python 编程")
         - Use proper punctuation and paragraph breaks for readability
         """)
-    Flux<String> chat(String userMessage);
+    Flux<String> chat(@MemoryId Long sessionId, @UserMessage String userMessage);
 
 }
