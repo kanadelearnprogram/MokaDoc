@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="page active">
+  <div class="app-layout">
     <!-- 侧边栏 -->
     <aside class="sidebar">
       <div class="logo">
@@ -78,5 +78,73 @@ const pageTitle = computed(() => {
 </script>
 
 <style scoped>
-/* 样式已从全局 style.css 引入 */
+.app-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 64px 1fr;
+    grid-template-areas:
+        "sidebar header"
+        "sidebar main";
+    height: 100vh;
+}
+
+/* 侧边栏 */
+.sidebar {
+    grid-area: sidebar;
+    background-color: var(--surface-color, #FFFFFF);
+    border-right: 1px solid var(--border-color, #E6E3DC);
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.sidebar .logo h1 {
+    font-size: 20px;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+    animation: fadeInDown 0.5s var(--transition-ease, cubic-bezier(0.4, 0, 0.2, 1)) both;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 顶部栏 */
+.topbar {
+    grid-area: header;
+    background-color: var(--surface-color, #FFFFFF);
+    border-bottom: 1px solid var(--border-color, #E6E3DC);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+
+/* 主内容区 */
+.main-content {
+    grid-area: main;
+    padding: 24px;
+    overflow-y: auto;
+    height: 100%;
+    box-sizing: border-box;
+    background: var(--bg-color, #F3F0EB);
+}
+
+@media (max-width: 768px) {
+    .app-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+        grid-template-areas:
+            "header"
+            "sidebar"
+            "main";
+    }
+
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color, #E6E3DC);
+    }
+}
 </style>

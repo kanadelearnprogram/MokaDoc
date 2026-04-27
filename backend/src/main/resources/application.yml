@@ -25,6 +25,10 @@ spring:
       database: 4
       password:
       ttl: 3600
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 60MB
 
 mybatis-flex:
   configuration:
@@ -51,6 +55,11 @@ springdoc:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: com.kanade.backend.controller
+
+# 文件上传配置
+file:
+  upload:
+    dir: ./uploads/documents
 
 langchain4j:
   community:

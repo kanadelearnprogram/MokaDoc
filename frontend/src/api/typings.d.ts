@@ -5,6 +5,18 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseDocumentVO = {
+    code?: number
+    data?: DocumentVO
+    message?: string
+  }
+
+  type BaseResponseListDocumentVO = {
+    code?: number
+    data?: DocumentVO[]
+    message?: string
+  }
+
   type BaseResponseLoginVO = {
     code?: number
     data?: LoginVO
@@ -35,8 +47,36 @@ declare namespace API {
     message?: string
   }
 
+  type checkMd5Params = {
+    md5: string
+  }
+
   type deleteSessionParams = {
     sessionId: number
+  }
+
+  type deleteUsingDELETEParams = {
+    id: number
+  }
+
+  type DocumentUpdateRequest = {
+    id?: number
+    name?: string
+    description?: string
+  }
+
+  type DocumentVO = {
+    id?: number
+    name?: string
+    fileType?: string
+    fileSize?: number
+    description?: string
+    fileMd5?: string
+    uploadTime?: string
+  }
+
+  type getByIdParams = {
+    id: number
   }
 
   type getUserByIdParams = {
@@ -100,6 +140,10 @@ declare namespace API {
     timeout?: number
   }
 
+  type updateParams = {
+    id: number
+  }
+
   type UserLoginRequest = {
     account?: string
     password?: string
@@ -108,6 +152,7 @@ declare namespace API {
   type UserQuestion = {
     content?: string
     sessionId?: number
+    documentIds?: number[]
   }
 
   type UserRegisterRequest = {

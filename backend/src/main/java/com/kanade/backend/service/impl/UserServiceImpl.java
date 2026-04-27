@@ -109,12 +109,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 2. 加密密码
         String encryptPassword = getEncryptPassword(password);
-
+        System.out.println(encryptPassword);
         // 3. 查询用户是否存在（支持用户名或邮箱登录）
         QueryWrapper queryWrapper = new QueryWrapper();
         queryWrapper.where("(username = ? OR email = ?) AND password = ?", account, account, encryptPassword);
         User user = this.mapper.selectOneByQuery(queryWrapper);
-
+        System.out.println(user);
         if (user == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
         }

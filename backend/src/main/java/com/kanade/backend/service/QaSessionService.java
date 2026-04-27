@@ -26,6 +26,16 @@ public interface QaSessionService extends IService<QaSession> {
     Long createSession(Long userId, String sessionName);
 
     /**
+     * 创建新会话(返回完整实体)
+     */
+    QaSession createSessionWithDetails(Long userId, String sessionName, String summary);
+
+    /**
+     * 更新会话信息
+     */
+    QaSession updateSessionInfo(Long sessionId, Long userId, String sessionName, String summary);
+
+    /**
      * 获取用户的会话列表
      * @param userId 用户ID
      * @return 会话列表(按更新时间倒序)
@@ -36,9 +46,10 @@ public interface QaSessionService extends IService<QaSession> {
      * 在会话中发送消息(包含保存和AI响应)
      * @param sessionId 会话ID
      * @param userMessage 用户消息
+     * @param documentIds 参考文档ID列表(可选,用于RAG)
      * @return 流式AI响应
      */
-    Flux<String> sendMessage(Long sessionId, String userMessage);
+    Flux<String> sendMessage(Long sessionId, String userMessage, List<Long> documentIds);
 
     /**
      * 删除会话(含级联清理消息)

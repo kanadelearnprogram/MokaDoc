@@ -34,7 +34,7 @@ myAxios.interceptors.response.use(
         !window.location.pathname.includes('/oauth/github/callback')
       ) {
         message.warning('请先登录')
-        window.location.href = `/user/login?redirect=${window.location.href}`
+        window.location.href = `/login?redirect=${window.location.href}`
       }
     }
     return response

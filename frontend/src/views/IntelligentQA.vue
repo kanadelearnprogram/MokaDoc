@@ -9,8 +9,8 @@
             <div v-if="sessions.length === 0 && !loadingSessions" class="empty-session">
               暂无会话，请新建或等待加载
             </div>
-            <div 
-              v-for="session in sessions" 
+            <div
+              v-for="session in visibleSessions"
               :key="session.id"
               class="session-item"
               :class="{ active: currentSessionId === session.id }"
@@ -21,7 +21,16 @@
                 {{ session.messages.length > 0 ? session.messages[0].content : '无消息' }}
               </div>
             </div>
-            
+
+            <!-- 展开更多会话 -->
+            <div
+              v-if="sessions.length > maxVisible"
+              class="session-expand"
+              @click="expanded = !expanded"
+            >
+              {{ expanded ? '收起' : `展开更多 (${sessions.length - maxVisible})` }}
+            </div>
+
             <!-- 加载更多提示 -->
             <div v-if="loadingSessions" class="loading-more">
               <span class="loading-spinner"></span>
@@ -39,20 +48,28 @@
         </div>
         
         <div class="document-select-list">
-          <div 
-            v-for="doc in documents" 
-            :key="doc.id"
-            class="document-select-item"
-            :class="{ active: selectedDocs.includes(doc.id) }"
-            @click="toggleDocumentSelection(doc.id)"
-          >
-            <input 
-              type="checkbox" 
-              :checked="selectedDocs.includes(doc.id)"
-              @click.stop
-            >
-            <span>{{ doc.name }}</span>
+          <div v-if="loadingDocuments" class="loading-documents">
+            加载文档中...
           </div>
+          <div v-else-if="documents.length === 0" class="loading-documents">
+            暂无文档，请先上传
+          </div>
+          <template v-else>
+            <div
+              v-for="doc in documents"
+              :key="doc.id"
+              class="document-select-item"
+              :class="{ active: selectedDocs.includes(doc.id) }"
+              @click="toggleDocumentSelection(doc.id)"
+            >
+              <input
+                type="checkbox"
+                :checked="selectedDocs.includes(doc.id)"
+                @click.stop
+              >
+              <span>{{ doc.name }}</span>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -135,6 +152,7 @@ import { ref, computed, nextTick, onUnmounted, onMounted } from 'vue'
 import { useSSEFetch, createAbortController } from '@/utils/sse'
 import { marked } from 'marked'
 import { listSessions, listChat } from '@/api/liaotianguanli'
+import { list as listDocuments } from '@/api/wendangguanli'
 
 // 配置 marked 选项
 marked.setOptions({
@@ -183,12 +201,27 @@ const loadingSessions = ref(false)   // 是否正在加载
 const sessionListRef = ref<HTMLElement | null>(null)  // 会话列表容器引用
 
 // 文档数据
-const documents = ref<Document[]>([
-  { id: 1, name: '机器学习入门.pdf' },
-  { id: 2, name: '数据结构笔记.txt' },
-  { id: 3, name: 'Python教程.md' }
-])
-const selectedDocs = ref<number[]>([1])
+const documents = ref<Document[]>([])
+const selectedDocs = ref<number[]>([])
+const loadingDocuments = ref(false)
+
+// 加载文档列表
+const fetchDocuments = async () => {
+  loadingDocuments.value = true
+  try {
+    const res = await listDocuments()
+    if (res.data.code === 0 && res.data.data) {
+      documents.value = res.data.data.map(doc => ({
+        id: doc.id!,
+        name: doc.name || '',
+      }))
+    }
+  } catch {
+    console.error('获取文档列表失败')
+  } finally {
+    loadingDocuments.value = false
+  }
+}
 
 // 用户输入
 const userInput = ref('')
@@ -501,8 +534,9 @@ const sendMessage = async () => {
   const API_URL = '/api/chat/ask'
   
   // 构建请求体：如果当前会话已有后端 sessionId，则传入以继续对话
-  const requestBody: { content: string; sessionId?: number } = {
-    content: message
+  const requestBody: { content: string; sessionId?: number; documentIds?: number[] } = {
+    content: message,
+    documentIds: selectedDocs.value.length > 0 ? [...selectedDocs.value] : undefined,
   }
   
   // 如果当前会话已经有后端分配的 sessionId，则传入
@@ -660,9 +694,10 @@ const scrollToBottom = () => {
   }
 }
 
-// 组件挂载时加载会话列表
+// 组件挂载时加载会话列表和文档列表
 onMounted(() => {
   loadSessions()
+  fetchDocuments()
 })
 
 // 组件卸载时中断 SSE 连接
@@ -685,16 +720,30 @@ const fixMarkdownHeaders = (text: string): string => {
 </script>
 
 <style scoped>
-/* Markdown 渲染样式 - 参考 GitHub 风格 + 中文排版优化 */
+/* --- 加载动画 --- */
+.loading-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color, #E6E3DC);
+    border-top-color: var(--primary-color, #4C5BA8);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Markdown 渲染样式 --- */
 .message-content :deep(.markdown-body) {
   line-height: 1.8;
   font-size: 15px;
-  color: #24292e;
-  white-space: pre-wrap; /* 保留空格和换行符,自动换行 */
-  word-break: break-word; /* 长单词/URL 自动换行 */
+  color: #2C2C3A;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-/* 标题样式 */
+/* 标题 */
 .message-content :deep(h1),
 .message-content :deep(h2),
 .message-content :deep(h3),
@@ -705,38 +754,33 @@ const fixMarkdownHeaders = (text: string): string => {
   margin-bottom: 0.75em;
   font-weight: 600;
   line-height: 1.25;
-  color: #24292e;
+  color: #2C2C3A;
 }
 
 .message-content :deep(h1) {
   font-size: 2em;
-  border-bottom: 2px solid #eaecef;
+  border-bottom: 2px solid var(--border-color, #E6E3DC);
   padding-bottom: 0.3em;
 }
 
 .message-content :deep(h2) {
   font-size: 1.5em;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid var(--border-color, #E6E3DC);
   padding-bottom: 0.3em;
 }
 
-.message-content :deep(h3) {
-  font-size: 1.25em;
-}
+.message-content :deep(h3) { font-size: 1.25em; }
+.message-content :deep(h4) { font-size: 1em; }
 
-.message-content :deep(h4) {
-  font-size: 1em;
-}
-
-/* 段落样式 - 中文排版优化 */
+/* 段落 */
 .message-content :deep(p) {
   margin-top: 0;
   margin-bottom: 1em;
   line-height: 1.8;
-  text-indent: 0; /* AI 对话不需要首行缩进 */
+  text-indent: 0;
 }
 
-/* 列表样式 */
+/* 列表 */
 .message-content :deep(ul),
 .message-content :deep(ol) {
   margin-top: 0;
@@ -753,14 +797,15 @@ const fixMarkdownHeaders = (text: string): string => {
   margin: 0.25em 0;
 }
 
-/* 代码样式 */
+/* 代码 */
 .message-content :deep(code) {
   padding: 0.2em 0.4em;
   margin: 0;
   font-size: 85%;
-  background-color: rgba(27, 31, 35, 0.05);
-  border-radius: 3px;
+  background-color: rgba(76, 91, 168, 0.06);
+  border-radius: 4px;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  color: #4C5BA8;
 }
 
 .message-content :deep(pre) {
@@ -768,9 +813,10 @@ const fixMarkdownHeaders = (text: string): string => {
   overflow: auto;
   font-size: 85%;
   line-height: 1.45;
-  background-color: #f6f8fa;
-  border-radius: 6px;
+  background-color: #F9F7F3;
+  border-radius: 8px;
   margin: 1em 0;
+  border: 1px solid var(--border-light, #F0EDE7);
 }
 
 .message-content :deep(pre code) {
@@ -781,26 +827,23 @@ const fixMarkdownHeaders = (text: string): string => {
   border: 0;
   word-break: normal;
   white-space: pre;
+  color: inherit;
 }
 
-/* 引用块样式 */
+/* 引用块 */
 .message-content :deep(blockquote) {
   margin: 1em 0;
   padding: 0.5em 1em;
-  color: #6a737d;
-  border-left: 0.25em solid #dfe2e5;
-  background-color: #f9f9f9;
+  color: #7A7A8A;
+  border-left: 3px solid var(--primary-color, #4C5BA8);
+  background-color: rgba(76, 91, 168, 0.03);
+  border-radius: 0 6px 6px 0;
 }
 
-.message-content :deep(blockquote > p:first-child) {
-  margin-top: 0;
-}
+.message-content :deep(blockquote > p:first-child) { margin-top: 0; }
+.message-content :deep(blockquote > p:last-child)  { margin-bottom: 0; }
 
-.message-content :deep(blockquote > p:last-child) {
-  margin-bottom: 0;
-}
-
-/* 表格样式 */
+/* 表格 */
 .message-content :deep(table) {
   border-spacing: 0;
   border-collapse: collapse;
@@ -813,26 +856,26 @@ const fixMarkdownHeaders = (text: string): string => {
 .message-content :deep(table th),
 .message-content :deep(table td) {
   padding: 8px 13px;
-  border: 1px solid #dfe2e5;
+  border: 1px solid var(--border-color, #E6E3DC);
 }
 
 .message-content :deep(table th) {
   font-weight: 600;
-  background-color: #f6f8fa;
+  background-color: #F9F7F3;
 }
 
 .message-content :deep(table tr) {
   background-color: #fff;
-  border-top: 1px solid #c6cbd1;
+  border-top: 1px solid var(--border-color, #E6E3DC);
 }
 
 .message-content :deep(table tr:nth-child(2n)) {
-  background-color: #f6f8fa;
+  background-color: #F9F7F3;
 }
 
-/* 链接样式 */
+/* 链接 */
 .message-content :deep(a) {
-  color: #0366d6;
+  color: var(--primary-color, #4C5BA8);
   text-decoration: none;
 }
 
@@ -845,61 +888,58 @@ const fixMarkdownHeaders = (text: string): string => {
   height: 0.25em;
   padding: 0;
   margin: 24px 0;
-  background-color: #e1e4e8;
+  background-color: var(--border-color, #E6E3DC);
   border: 0;
 }
 
-/* 图片样式 */
+/* 图片 */
 .message-content :deep(img) {
   max-width: 100%;
   height: auto;
   box-sizing: content-box;
-  border-radius: 6px;
+  border-radius: 8px;
   margin: 1em 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(44, 44, 58, 0.08);
 }
 
-/* 任务列表复选框 */
-.message-content :deep(input[type="checkbox"]) {
-  margin-right: 0.5em;
-}
-
-/* 强调文本 */
+/* 强调 */
 .message-content :deep(strong) {
   font-weight: 600;
-  color: #24292e;
+  color: #2C2C3A;
 }
 
-.message-content :deep(em) {
-  font-style: italic;
-}
+.message-content :deep(em) { font-style: italic; }
 
-/* 删除线 */
 .message-content :deep(del) {
   text-decoration: line-through;
   opacity: 0.7;
 }
 
-/* 高亮文本 */
 .message-content :deep(mark) {
-  background-color: #fffbdd;
+  background-color: rgba(200, 144, 74, 0.15);
   padding: 0.1em 0.3em;
   border-radius: 3px;
 }
 
-/* 空会话提示 */
+/* 任务列表 */
+.message-content :deep(input[type="checkbox"]) {
+  margin-right: 0.5em;
+  accent-color: var(--primary-color, #4C5BA8);
+}
+
+/* --- 空会话提示 --- */
 .empty-session {
   text-align: center;
-  color: #909399;
+  color: #7A7A8A;
   font-size: 14px;
   padding: 20px 10px;
 }
 
-/* 加载更多提示 */
+/* --- 加载更多 --- */
 .loading-more {
   text-align: center;
   padding: 12px 10px;
-  color: #909399;
+  color: #7A7A8A;
   font-size: 13px;
   display: flex;
   align-items: center;
@@ -907,27 +947,72 @@ const fixMarkdownHeaders = (text: string): string => {
   gap: 8px;
 }
 
-/* 加载动画 */
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #dcdfe6;
-  border-top-color: #409eff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* 无更多数据提示 */
 .no-more {
   text-align: center;
   padding: 12px 10px;
-  color: #c0c4cc;
+  color: #A8A8B4;
   font-size: 13px;
+}
+
+.loading-documents {
+  text-align: center;
+  padding: 30px 10px;
+  color: #7A7A8A;
+  font-size: 14px;
+}
+
+/* --- 固定框 + 内部滚动 (布局保留) --- */
+.session-management {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.qa-left-header {
+  flex-shrink: 0;
+}
+
+.qa-middle {
+  height: 100%;
+  min-height: 0;
+}
+
+.chat-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.qa-middle-header {
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex-shrink: 0;
+}
+
+.qa-right {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.qa-right-header {
+  flex-shrink: 0;
+}
+
+.reference-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 </style>

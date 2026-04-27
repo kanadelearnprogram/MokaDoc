@@ -4,6 +4,8 @@ import com.kanade.backend.common.BaseResponse;
 import com.kanade.backend.common.ResultUtils;
 import com.kanade.backend.dto.ChatSessionQueryDTO;
 import com.kanade.backend.dto.UserQuestion;
+import com.kanade.backend.dto.chat.CreateSessionRequest;
+import com.kanade.backend.dto.chat.UpdateSessionRequest;
 import com.kanade.backend.entity.QaMessage;
 import com.kanade.backend.entity.QaSession;
 import com.kanade.backend.entity.User;
@@ -89,7 +91,7 @@ public class ChatController {
             // 5. 调用服务层处理消息(返回Flux<String>,已经是JSON格式)
             log.debug("💬 [发送消息] sessionId={}, messageLength={}", finalSessionId, question.getContent().length());
             
-            qaSessionService.sendMessage(finalSessionId, question.getContent())
+            qaSessionService.sendMessage(finalSessionId, question.getContent(), question.getDocumentIds())
                 .doOnNext(jsonData -> {
                     try {
                         sseEmitterManager.send(finalSessionId.toString(), jsonData);
@@ -140,6 +142,33 @@ public class ChatController {
         User currentUser = userService.getLoginUser(request);
         qaSessionService.deleteSession(sessionId, currentUser.getId());
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 创建会话
+     */
+    @PostMapping("/session")
+    @Operation(summary = "创建会话")
+    public BaseResponse<QaSession> createSession(@RequestBody CreateSessionRequest request,
+                                                  HttpServletRequest httpRequest) {
+        User currentUser = userService.getLoginUser(httpRequest);
+        QaSession session = qaSessionService.createSessionWithDetails(
+            currentUser.getId(), request.getSessionName(), request.getSummary());
+        return ResultUtils.success(session);
+    }
+
+    /**
+     * 更新会话
+     */
+    @PutMapping("/session/{sessionId}")
+    @Operation(summary = "更新会话")
+    public BaseResponse<QaSession> updateSession(@PathVariable Long sessionId,
+                                                  @RequestBody UpdateSessionRequest request,
+                                                  HttpServletRequest httpRequest) {
+        User currentUser = userService.getLoginUser(httpRequest);
+        QaSession session = qaSessionService.updateSessionInfo(
+            sessionId, currentUser.getId(), request.getSessionName(), request.getSummary());
+        return ResultUtils.success(session);
     }
 
     //获取当前会话的聊天记录

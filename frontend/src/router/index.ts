@@ -1,12 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import MainLayout from '../components/MainLayout.vue'
+import { useUserStore } from '../stores/user'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
+      redirect: '/login',
+    },
+    {
+      path: '/login',
       name: 'login',
       component: LoginView,
     },
@@ -42,6 +47,26 @@ const router = createRouter({
       ],
     },
   ],
+})
+
+// 导航守卫：检查登录状态
+router.beforeEach((to, _from, next) => {
+  const publicPages = ['/login']
+  const authRequired = !publicPages.includes(to.path)
+  const userStore = useUserStore()
+
+  if (authRequired && !userStore.isLogin) {
+    // 尝试从后端获取当前用户（恢复 session）
+    userStore.fetchCurrentUser().then(() => {
+      if (userStore.isLogin) {
+        next()
+      } else {
+        next('/login')
+      }
+    })
+  } else {
+    next()
+  }
 })
 
 export default router

@@ -2,6 +2,7 @@ package com.kanade.backend.ai;
 
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -100,6 +101,21 @@ public class AiServiceFactory {
         };
     }
     
+    /**
+     * 创建带文档 RAG 的聊天助手（不缓存，每次调用新建）
+     *
+     * @param contentRetriever 文档内容检索器
+     * @return AiChatService 实例
+     */
+    public AiChatService createRagChatAssistant(ContentRetriever contentRetriever) {
+        log.info("🧠 [创建RAG助手] 已配置 ContentRetriever");
+        return AiServices.builder(AiChatService.class)
+                .streamingChatModel(openAiStreamingChatModel)
+                .chatMemoryProvider(chatMemoryProvider)
+                .contentRetriever(contentRetriever)
+                .build();
+    }
+
     /**
      * 清除缓存的服务实例（用于测试或重新加载）
      */
