@@ -15,6 +15,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  optimizeDeps: {
+    include: ['vis-data', 'vis-network'],
+  },
   server: {
     proxy: {
       '/api': {
