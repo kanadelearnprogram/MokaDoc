@@ -72,6 +72,14 @@ export async function list(options?: { [key: string]: any }) {
   })
 }
 
+/** 重建向量索引 POST /document/reindex */
+export async function reindex(options?: { [key: string]: any }) {
+  return request<API.BaseResponseInteger>('/document/reindex', {
+    method: 'POST',
+    ...(options || {}),
+  })
+}
+
 /** 上传文档 上传文件，自动MD5去重 POST /document/upload */
 export async function upload(body: File | FormData, options?: { [key: string]: any }) {
   const formData = body instanceof FormData ? body : new FormData()

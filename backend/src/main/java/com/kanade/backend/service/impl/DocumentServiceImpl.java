@@ -140,6 +140,15 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
         }
 
         log.info("✅ [文档上传] 文档上传流程完成 - docId={}, userId={}", docId, userId);
+
+        // 7. 触发向量化索引（异步，上传后立即建立向量索引）
+        try {
+            log.info("🔨 [文档上传] 触发向量化索引: docId={}", docId);
+            documentRagService.triggerIndexing(docId, userId);
+        } catch (Exception e) {
+            log.warn("⚠️ [文档上传] 向量化索引异常（不影响上传）: docId={}, error={}", docId, e.getMessage());
+        }
+
         return toVO(doc);
     }
 

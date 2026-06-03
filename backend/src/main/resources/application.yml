@@ -20,7 +20,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/mokaDoc
     username: root
-    password: 12345678
+    password: 114514
   # Redis ????????
   data:
     redis:
@@ -65,12 +65,6 @@ file:
   upload:
     dir: ./uploads/documents
 
-langchain4j:
-  open-ai:
-    streaming-chat-model:
-      api-key: sk-5be77ef5a0ce4773b16493ec5da120aa
-      base-url: https://api.deepseek.com
-      model-name: deepseek-v4-flash
 
   community:
     redis:
@@ -94,16 +88,30 @@ rag:
   reranking:
     enabled: true
     model: rrf              # rrf（内置免费）
-    top-k: 5
+    top-k: 50
   injection:
     template: standard      # standard | concise | analytical
   es:
-    max-results: 10
-    min-score: 0.75
+    max-results: 50
+    min-score: 0.60
 
-graph:
-  extraction:
-    llm:
-      base-url: https://api.deepseek.com/
-      api-key: sk-5be77ef5a0ce4773b16493ec5da120aa
-      model-name: deepseek-v4-flash
+  # 向量化增强配置
+  embedding:
+    enhancers: sliding-window, graph-entity   # 增强器：sliding-window | graph-entity | 留空禁用
+    chunk-strategy: article-aware         # 分块策略：coarse | fine | dual | article-aware
+    chunk:
+      coarse-size: 2000
+      coarse-overlap: 200
+      fine-size: 200
+      fine-overlap: 30
+    signature-cache:
+      enabled: true                            # 内容签名缓存，避免重复索引
+    # Phase 3: 邻居块扩展（检索时自动引入命中 chunk 的相邻块）
+    neighbor-expansion:
+      enabled: true
+      window: 2                                # ±1 个相邻块
+    # Phase 4: Parent-Child 父子块解析（fine chunk 命中时引入父 coarse chunk）
+    parent-child:
+      enabled: true
+
+

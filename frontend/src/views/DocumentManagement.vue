@@ -4,6 +4,9 @@
       <button class="btn btn-primary" :disabled="uploadLoading" @click="triggerUpload">
         {{ uploadLoading ? '上传中...' : '📤 上传文档' }}
       </button>
+      <button class="btn" :disabled="reindexLoading" @click="handleReindex">
+        {{ reindexLoading ? '重建中...' : '🔄 重建索引' }}
+      </button>
       <input
         ref="fileInputRef"
         type="file"
@@ -83,7 +86,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { list, deleteUsingDelete, upload as uploadApi } from '@/api/wendangguanli'
+import { list, deleteUsingDelete, upload as uploadApi, reindex } from '@/api/wendangguanli'
 
 const router = useRouter()
 const searchQuery = ref('')
@@ -91,6 +94,7 @@ const viewMode = ref('card')
 const loading = ref(false)
 const uploadLoading = ref(false)
 const deletingId = ref<number | null>(null)
+const reindexLoading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const MAX_UPLOAD_SIZE = 200 * 1024 * 1024
 
@@ -228,6 +232,24 @@ const previewDocument = (doc: DocItem) => {
 // 分享文档
 const shareDocument = (_doc: DocItem) => {
   message.info('分享功能开发中')
+}
+
+// 重建向量索引
+const handleReindex = async () => {
+  if (!confirm('确定要重建所有文档的向量索引吗？这将清除旧索引并使用最新分块策略重新索引。')) return
+  reindexLoading.value = true
+  try {
+    const res = await reindex()
+    if (res.data.code === 0) {
+      message.success(`索引重建完成，共处理 ${res.data.data ?? 0} 个文档`)
+    } else {
+      message.error(res.data.message || '索引重建失败')
+    }
+  } catch {
+    message.error('索引重建失败，请稍后重试')
+  } finally {
+    reindexLoading.value = false
+  }
 }
 
 // 删除文档

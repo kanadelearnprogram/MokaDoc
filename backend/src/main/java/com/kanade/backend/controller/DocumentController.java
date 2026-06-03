@@ -1,5 +1,6 @@
 package com.kanade.backend.controller;
 
+import com.kanade.backend.ai.rag.DocumentRagService;
 import com.kanade.backend.common.BaseResponse;
 import com.kanade.backend.common.ResultUtils;
 import com.kanade.backend.dto.document.DocumentUpdateRequest;
@@ -41,6 +42,9 @@ public class DocumentController {
 
     @Resource
     private DocumentService documentService;
+
+    @Resource
+    private DocumentRagService documentRagService;
 
     @Resource
     private HttpServletRequest request;
@@ -132,6 +136,18 @@ public class DocumentController {
         Long userId = getLoginUserId();
         documentService.delete(id, userId);
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 重建向量索引（RAG 索引重建）
+     */
+    @PostMapping("/reindex")
+    @Operation(summary = "重建向量索引", description = "清除当前用户的旧ES索引数据，使用最新分块策略重新索引所有文档")
+    public BaseResponse<Integer> reindex() {
+        Long userId = getLoginUserId();
+        log.info("🔄 [重建索引] 用户 {} 请求重建所有文档的向量索引", userId);
+        int count = documentRagService.reindexAll(userId);
+        return ResultUtils.success(count);
     }
 
     /**

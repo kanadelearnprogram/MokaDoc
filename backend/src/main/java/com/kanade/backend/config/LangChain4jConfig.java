@@ -13,6 +13,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class LangChain4jConfig {
 
+    static {
+        // DeepSeek API 在 HTTP/2 下偶发 EOF 断连，强制使用 HTTP/1.1
+        System.setProperty("jdk.http.client.HttpClient.version", "HTTP_1_1");
+    }
+
     @Value("${langchain4j.open-ai.streaming-chat-model.base-url}")
     private String baseUrl;
 

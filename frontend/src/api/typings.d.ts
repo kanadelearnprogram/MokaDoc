@@ -59,6 +59,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseInteger = {
+    code?: number
+    data?: number
+    message?: string
+  }
+
   type BaseResponseStorageSummary = {
     code?: number
     data?: StorageSummaryVO

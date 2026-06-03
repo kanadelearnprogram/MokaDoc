@@ -59,7 +59,7 @@ public class RagRetrieverConfig {
                             .index(indexName)
                             .query(q -> q
                                     .match(m -> m
-                                            .field("content")
+                                            .field("text")
                                             .query(queryText)
                                     )
                             )
